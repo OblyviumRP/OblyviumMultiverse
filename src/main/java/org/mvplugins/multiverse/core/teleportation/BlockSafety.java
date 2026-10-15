@@ -142,7 +142,7 @@ public final class BlockSafety {
     public boolean canSpawnAtBlockSafely(@NotNull Block block) {
         Logging.finest("Checking spawn safety for location: %s, %s, %s", block.getX(), block.getY(), block.getZ());
         if (!isOwned(block)) {
-            Logging.finer("Skipping spawn safety check for block outside the current region thread: " + block);
+            Logging.finer("Skipping spawn safety check outside the current region thread: %s, %s, %s", block.getX(), block.getY(), block.getZ());
             return true;
         }
         if (!block.getWorld().getWorldBorder().isInside(block.getLocation())) {
