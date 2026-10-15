@@ -2,7 +2,6 @@ package org.mvplugins.multiverse.core.teleportation;
 
 import co.aikar.commands.BukkitCommandIssuer;
 import com.dumptruckman.minecraft.util.Logging;
-import io.papermc.lib.PaperLib;
 import io.vavr.control.Either;
 import io.vavr.control.Try;
 import org.bukkit.Bukkit;
@@ -254,7 +253,7 @@ public final class AsyncSafetyTeleporterAction {
             @NotNull Entity teleportee,
             @NotNull Location location
     ) {
-        return AsyncAttempt.of(PaperLib.teleportAsync(teleportee, location), exception -> {
+        return AsyncAttempt.of(teleportee.teleportAsync(location), exception -> {
             Logging.warning("Failed to teleport %s to %s: %s",
                     teleportee.getName(), location, exception.getMessage());
             return Attempt.failure(TeleportFailureReason.TELEPORT_FAILED_EXCEPTION);
