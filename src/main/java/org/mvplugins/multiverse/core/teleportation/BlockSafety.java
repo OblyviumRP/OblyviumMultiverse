@@ -3,6 +3,11 @@ package org.mvplugins.multiverse.core.teleportation;
 import com.dumptruckman.minecraft.util.Logging;
 import io.vavr.control.Option;
 import jakarta.inject.Inject;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -22,6 +27,8 @@ import org.mvplugins.multiverse.core.config.CoreConfig;
 @Service
 public final class BlockSafety {
 
+    private static final MethodHandle OWNED_BY_CURRENT_REGION = ownedByCurrentRegion();
+
     private final CoreConfig config;
     private final LocationManipulation locationManipulation;
 
@@ -38,7 +45,8 @@ public final class BlockSafety {
      * @return True if the block at that {@link Location} is above air.
      */
     public boolean isBlockAboveAir(Location location) {
-        return location.getBlock().getRelative(0, -1, 0).getType().isAir();
+        Block below = location.getBlock().getRelative(0, -1, 0);
+        return isOwned(below) && below.getType().isAir();
     }
 
     /**
@@ -48,7 +56,8 @@ public final class BlockSafety {
      * @return True if an entity would be on tracks at the specified {@link Location}.
      */
     public boolean isEntityOnTrack(Location location) {
-        return location.getBlock().getBlockData() instanceof Rail;
+        Block block = location.getBlock();
+        return isOwned(block) && block.getBlockData() instanceof Rail;
     }
 
     /**
@@ -132,6 +141,10 @@ public final class BlockSafety {
      */
     public boolean canSpawnAtBlockSafely(@NotNull Block block) {
         Logging.finest("Checking spawn safety for location: %s, %s, %s", block.getX(), block.getY(), block.getZ());
+        if (!isOwned(block)) {
+            Logging.finer("Skipping spawn safety check for block outside the current region thread: " + block);
+            return true;
+        }
         if (!block.getWorld().getWorldBorder().isInside(block.getLocation())) {
             Logging.finest("Location is outside world border.");
             return false;
@@ -352,19 +365,19 @@ public final class BlockSafety {
         }
         Block b = location.getWorld().getBlockAt(location);
         Location foundLocation = null;
-        if (b.getType() == Material.NETHER_PORTAL) {
+        if (isPortal(b)) {
             return location;
         }
-        if (b.getRelative(BlockFace.NORTH).getType() == Material.NETHER_PORTAL) {
+        if (isPortal(b.getRelative(BlockFace.NORTH))) {
             foundLocation = getCloserBlock(location, b.getRelative(BlockFace.NORTH).getLocation(), foundLocation);
         }
-        if (b.getRelative(BlockFace.SOUTH).getType() == Material.NETHER_PORTAL) {
+        if (isPortal(b.getRelative(BlockFace.SOUTH))) {
             foundLocation = getCloserBlock(location, b.getRelative(BlockFace.SOUTH).getLocation(), foundLocation);
         }
-        if (b.getRelative(BlockFace.EAST).getType() == Material.NETHER_PORTAL) {
+        if (isPortal(b.getRelative(BlockFace.EAST))) {
             foundLocation = getCloserBlock(location, b.getRelative(BlockFace.EAST).getLocation(), foundLocation);
         }
-        if (b.getRelative(BlockFace.WEST).getType() == Material.NETHER_PORTAL) {
+        if (isPortal(b.getRelative(BlockFace.WEST))) {
             foundLocation = getCloserBlock(location, b.getRelative(BlockFace.WEST).getLocation(), foundLocation);
         }
         return foundLocation;
@@ -388,5 +401,29 @@ public final class BlockSafety {
             return blockA;
         }
         return blockB;
+    }
+
+    private boolean isPortal(@NotNull Block block) {
+        return isOwned(block) && block.getType() == Material.NETHER_PORTAL;
+    }
+
+    private static boolean isOwned(@NotNull Block block) {
+        if (OWNED_BY_CURRENT_REGION == null) {
+            return true;
+        }
+        try {
+            return (boolean) OWNED_BY_CURRENT_REGION.invokeExact(block);
+        } catch (Throwable e) {
+            return true;
+        }
+    }
+
+    private static @Nullable MethodHandle ownedByCurrentRegion() {
+        try {
+            return MethodHandles.publicLookup().findStatic(Bukkit.class, "isOwnedByCurrentRegion",
+                    MethodType.methodType(boolean.class, Block.class));
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
     }
 }
