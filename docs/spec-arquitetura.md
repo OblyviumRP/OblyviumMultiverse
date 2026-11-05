@@ -4,7 +4,7 @@ Proposta, sem código. Base: `oblyvium` (`3854b43`), Multiverse-Core 5.8.1 mais 
 
 ## Objetivo
 
-Deixar o fork rastreável e sem risco de thread. Nosso código são 3 commits em 2 arquivos, 45 linhas, sobre 40 mil de terceiro. O código do upstream já usa Strategy e Factory de sobra; refatorar aqui só encarece a próxima versão.
+Deixar o fork rastreável e sem risco de thread. Nosso código são 3 commits em 2 arquivos, 45 linhas, sobre 40 mil de terceiro. Refatorar aqui só encarece a próxima versão.
 
 Fora de escopo: refatorar o Multiverse-Core.
 
@@ -12,7 +12,7 @@ Fora de escopo: refatorar o Multiverse-Core.
 
 - Mudanças nossas: `AsyncSafetyTeleporterAction` e `BlockSafety`, para `teleportAsync` e checagem de spawn na thread da região.
 - O jar do Release informa versão `local`, sem como ligar a um commit. Sem release nossa.
-- `plugin.yml` no repo tem `folia-supported` falso e o jar instalado não declara o campo. O `shreddedpaper.yml` tem `run-unsupported-plugins-in-sync: true`, então ele roda em modo de compatibilidade sync. Não medi o efeito no tick.
+- Nem o `plugin.yml` do repo nem o do jar instalado declaram `folia-supported`. O `shreddedpaper.yml` tem `run-unsupported-plugins-in-sync: true`, então ele roda em modo de compatibilidade sync. Não medi o efeito no tick.
 - 7 workflows com `ubuntu-latest`, herdados, contra a regra do runner. 7 branches extras herdadas. Branch padrão `oblyvium`, fora da regra de `main`.
 
 ## SOLID
